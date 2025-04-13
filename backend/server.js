@@ -1,40 +1,32 @@
-// ======= backend/server.js =======
 const express = require('express');
+const connectDB = require('./config/db'); // Only this handles mongoose
 const cors = require('cors');
-const mongoose = require('mongoose');
-const dotenv = require('dotenv');
-const authRoutes = require('./routes/auth');
-const userRoutes = require('./routes/users');
-const serviceRoutes = require('./routes/services');
+const path = require('path');
 
 const app = express();
-dotenv.config();
 
+// Connect to DB
+connectDB();
+
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-}).then(() => console.log('MongoDB Connected')).catch((err) => console.log(err));
+// Serve static frontend
+app.use(express.static(path.join(__dirname, '../public')));
 
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/services', serviceRoutes);
+// Routes
+app.use('/api', require('./routes/auth'));
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
-// ======= backend/models/User.js =======
-const mongoose = require('mongoose');
-
-const userSchema = new mongoose.Schema({
-  name: String,
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  skills: [String],
-  bio: String,
+// Catch-all for frontend routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
-module.exports = mongoose.model('User', userSchema);
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
+});
+
+
 
